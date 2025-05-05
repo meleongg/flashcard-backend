@@ -26,3 +26,20 @@ def pos_tag(payload: dict):
       "example": "你好，世界！",
       "pos_tags": tags
     }
+
+@app.post("/flashcard")
+def generate_flashcard(payload: dict):
+    word = payload.get("word", "")
+    doc = nlp(word)
+    token = doc[0] if doc else None
+
+    flashcard = {
+        "word": word,
+        "translation": "你好",
+        "phonetic": "nǐ hǎo",
+        "pos": token.pos_ if token else None,
+        "example": f"{word} is commonly used in greetings.",
+        "notes": "Pronoun - used to refer to the second person in Mandarin."
+    }
+
+    return flashcard
