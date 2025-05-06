@@ -63,16 +63,33 @@ def generate_example_and_notes(word: str) -> tuple[str, str]:
     return example, note
 
 def translate_word(word: str, target_language: str = "Chinese") -> str:
-    prompt = f"Translate the word '{word}' to {target_language}. Respond with the translation only."
+    """
+    Translate a word to the target language using OpenAI's API.
+    """
+    try:
+        system_prompt = "You are a professional translator. Provide accurate translations only."
+        user_prompt = f"Translate the English word '{word}' to {target_language}. Return ONLY the translation characters with no explanations, notes, quotes or formatting."
 
-    response = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.3,
-        max_tokens=20,
-    )
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+            temperature=0.2,  # Lower temperature for more consistent output
+            max_tokens=15,
+        )
 
-    return response.choices[0].message.content.strip()
+        translation = response.choices[0].message.content.strip()
+
+        # Remove quotes if present
+        translation = translation.strip('"\'')
+
+        return translation
+
+    except Exception as e:
+        print(f"Translation error: {str(e)}")
+        return f"Translation unavailable"
 
 # Flashcard endpoint
 @app.post("/flashcard")
