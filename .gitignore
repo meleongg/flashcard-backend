@@ -1,3 +1,38 @@
-api/__pycache__
+# ---------------------
+# Python bytecode
+# ---------------------
+__pycache__/
+*.py[cod]
 
-venv
+# ---------------------
+# Virtual environment
+# ---------------------
+venv/
+env/
+.venv/
+
+# ---------------------
+# Environment variables / secrets
+# ---------------------
+.env
+.env.*
+
+# ---------------------
+# Distribution / build
+# ---------------------
+*.egg
+*.egg-info/
+dist/
+build/
+
+# ---------------------
+# Logs
+# ---------------------
+*.log
+
+# ---------------------
+# System/Editor junk
+# ---------------------
+.DS_Store
+Thumbs.db
+.vscode/
