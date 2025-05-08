@@ -36,3 +36,6 @@ build/
 .DS_Store
 Thumbs.db
 .vscode/
+
+data/cedict_1_0_ts_utf-8_mdbg.txt.gz
+data/cedict.json
