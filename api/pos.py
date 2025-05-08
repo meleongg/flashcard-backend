@@ -1,8 +1,8 @@
 from fastapi import FastAPI
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
-from models import Flashcard
-from database import get_db
+from models.models import Flashcard
+from database.database import get_db
 import uuid
 from fastapi.middleware.cors import CORSMiddleware
 import spacy

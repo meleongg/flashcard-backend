@@ -1,0 +1,60 @@
+from fastapi import APIRouter, Depends
+from sqlalchemy.ext.asyncio import AsyncSession
+from models.models import Flashcard
+from database.database import get_db
+from utils.utils import generate_example_and_notes, translate_word, get_pos
+from api.schemas import FlashcardResponse
+from typing import List
+from sqlalchemy.future import select
+import uuid
+
+router = APIRouter()
+
+@router.get("/flashcards", response_model=List[FlashcardResponse])
+async def get_flashcards(user_id: str, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(
+        select(Flashcard).where(Flashcard.user_id == user_id)
+    )
+    flashcards = result.scalars().all()
+    return flashcards
+
+
+@router.post("/flashcard")
+async def generate_flashcard(payload: dict, db: AsyncSession = Depends(get_db)):
+    word = payload.get("word", "")
+    user_id = payload.get("userId")
+
+    if not word or not user_id:
+        return {"error": "Missing word or userId"}
+
+    pos = get_pos(word)
+    translation = translate_word(word)
+    example, notes = generate_example_and_notes(word)
+    phonetic = "-".join(word)
+
+    new_flashcard = Flashcard(
+        id=str(uuid.uuid4()),
+        word=word,
+        translation=translation,
+        phonetic=phonetic,
+        pos=pos,
+        example=example,
+        notes=notes,
+        user_id=user_id
+    )
+
+    db.add(new_flashcard)
+    await db.commit()
+    await db.refresh(new_flashcard)
+
+    return {
+        "message": "Flashcard created",
+        "data": {
+            "word": word,
+            "translation": translation,
+            "phonetic": phonetic,
+            "pos": pos,
+            "example": example,
+            "notes": notes
+        }
+    }

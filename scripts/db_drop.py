@@ -1,5 +1,5 @@
-from models import Base
-from database import engine
+from models.models import Base
+from database.database import engine
 import asyncio
 
 async def drop_models():
