@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from models.models import Flashcard
 from database.database import get_db
 from utils.utils import generate_example_and_notes, translate_word, get_pos
-from api.schemas import PaginatedFlashcardResponse, FlashcardUpdate
+from api.schemas import PaginatedFlashcardResponse, FlashcardUpdate, FlashcardResponse
 from typing import List
 from sqlalchemy.future import select
 from fastapi import Query
@@ -27,18 +27,16 @@ async def delete_flashcard(flashcard_id: str, db: AsyncSession = Depends(get_db)
 
 @router.get("/flashcards", response_model=PaginatedFlashcardResponse)
 async def get_flashcards(
-    user_id: str,
-    skip: int = Query(0, ge=0),
-    limit: int = Query(10, le=100),
+    user_id: str = Query(..., min_length=1, description="Authenticated user ID"),
+    skip: int = Query(0, ge=0, description="Number of records to skip"),
+    limit: int = Query(10, ge=1, le=100, description="Maximum number of records to return"),
     db: AsyncSession = Depends(get_db),
 ):
-    # Fetch paginated flashcards
     result = await db.execute(
         select(Flashcard).where(Flashcard.user_id == user_id).offset(skip).limit(limit)
     )
     flashcards = result.scalars().all()
 
-    # Fetch total count
     count_result = await db.execute(
         select(func.count()).select_from(Flashcard).where(Flashcard.user_id == user_id)
     )
@@ -46,64 +44,40 @@ async def get_flashcards(
 
     return {"total": total, "flashcards": flashcards}
 
-@router.put("/flashcard/{flashcard_id}")
-async def update_flashcard(
-    flashcard_id: str,
-    payload: FlashcardUpdate,
-    user_id: str = Query(...),
-    db: AsyncSession = Depends(get_db),
-):
-    # Fetch the flashcard
-    result = await db.execute(
-        select(Flashcard).where(Flashcard.id == flashcard_id, Flashcard.user_id == user_id)
-    )
+@router.put("/flashcard/{flashcard_id}", response_model=FlashcardResponse)
+async def update_flashcard(flashcard_id: str, update_data: FlashcardUpdate, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Flashcard).where(Flashcard.id == flashcard_id))
     flashcard = result.scalar_one_or_none()
 
     if not flashcard:
         raise HTTPException(status_code=404, detail="Flashcard not found")
 
-    # Update fields
-    for field, value in payload.dict(exclude_unset=True).items():
+    for field, value in update_data.dict(exclude_unset=True).items():
         setattr(flashcard, field, value)
 
     await db.commit()
     await db.refresh(flashcard)
-
     return flashcard
 
 @router.post("/flashcard")
 async def generate_flashcard(payload: dict, db: AsyncSession = Depends(get_db)):
-    word = payload.get("word", "")
-    user_id = payload.get("userId")
-
-    if not word or not user_id:
-        return {"error": "Missing word or userId"}
-
-    pos = get_pos(word)
-    translation = translate_word(word)
-    example, notes = generate_example_and_notes(word)
-    phonetic = "-".join(word)
+    pos = get_pos(payload.word)
+    translation = translate_word(payload.word)
+    example, notes = generate_example_and_notes(payload.word)
+    phonetic = "-".join(payload.word)
 
     new_flashcard = Flashcard(
         id=str(uuid.uuid4()),
-        word=word,
+        word=payload.word,
         translation=translation,
         phonetic=phonetic,
         pos=pos,
         example=example,
         notes=notes,
-        user_id=user_id
+        user_id=payload.userId
     )
 
     db.add(new_flashcard)
     await db.commit()
     await db.refresh(new_flashcard)
-
-    return {
-        "word": word,
-        "translation": translation,
-        "phonetic": phonetic,
-        "pos": pos,
-        "example": example,
-        "notes": notes
-    }
+    return new_flashcard

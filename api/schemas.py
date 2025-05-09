@@ -1,17 +1,18 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import List, Optional
 from datetime import datetime
 
-class FlashcardUpdate(BaseModel):
-    word: Optional[str]
-    translation: Optional[str]
-    phonetic: Optional[str]
-    pos: Optional[str]
-    example: Optional[str]
-    notes: Optional[str]
+class FlashcardCreate(BaseModel):
+    word: str = Field(..., min_length=1, max_length=100)
+    userId: str = Field(..., min_length=5)
 
-    class Config:
-        orm_mode = True
+class FlashcardUpdate(BaseModel):
+    word: Optional[str] = Field(None, min_length=1, max_length=100)
+    translation: Optional[str] = Field(None, max_length=100)
+    phonetic: Optional[str] = Field(None, max_length=100)
+    pos: Optional[str] = Field(None, max_length=50)
+    example: Optional[str] = Field(None, max_length=200)
+    notes: Optional[str] = Field(None, max_length=200)
 
 class FlashcardResponse(BaseModel):
     id: str
