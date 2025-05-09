@@ -12,6 +12,19 @@ import uuid
 
 router = APIRouter()
 
+from fastapi import HTTPException, status
+
+@router.delete("/flashcard/{flashcard_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_flashcard(flashcard_id: str, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Flashcard).where(Flashcard.id == flashcard_id))
+    flashcard = result.scalars().first()
+
+    if not flashcard:
+        raise HTTPException(status_code=404, detail="Flashcard not found")
+
+    await db.delete(flashcard)
+    await db.commit()
+
 @router.get("/flashcards", response_model=PaginatedFlashcardResponse)
 async def get_flashcards(
     user_id: str,
