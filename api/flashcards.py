@@ -6,17 +6,32 @@ from utils.utils import generate_example_and_notes, translate_word, get_pos
 from api.schemas import FlashcardResponse
 from typing import List
 from sqlalchemy.future import select
+from fastapi import Query
+from sqlalchemy import func
 import uuid
 
 router = APIRouter()
 
 @router.get("/flashcards", response_model=List[FlashcardResponse])
-async def get_flashcards(user_id: str, db: AsyncSession = Depends(get_db)):
+async def get_flashcards(
+    user_id: str,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(10, le=100),
+    db: AsyncSession = Depends(get_db),
+):
+    # Fetch paginated flashcards
     result = await db.execute(
-        select(Flashcard).where(Flashcard.user_id == user_id)
+        select(Flashcard).where(Flashcard.user_id == user_id).offset(skip).limit(limit)
     )
     flashcards = result.scalars().all()
-    return flashcards
+
+    # Fetch total count
+    count_result = await db.execute(
+        select(func.count()).select_from(Flashcard).where(Flashcard.user_id == user_id)
+    )
+    total = count_result.scalar_one()
+
+    return {"total": total, "flashcards": flashcards}
 
 
 @router.post("/flashcard")
@@ -48,13 +63,10 @@ async def generate_flashcard(payload: dict, db: AsyncSession = Depends(get_db)):
     await db.refresh(new_flashcard)
 
     return {
-        "message": "Flashcard created",
-        "data": {
-            "word": word,
-            "translation": translation,
-            "phonetic": phonetic,
-            "pos": pos,
-            "example": example,
-            "notes": notes
-        }
+        "word": word,
+        "translation": translation,
+        "phonetic": phonetic,
+        "pos": pos,
+        "example": example,
+        "notes": notes
     }
