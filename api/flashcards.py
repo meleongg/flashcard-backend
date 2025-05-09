@@ -4,7 +4,6 @@ from models.models import Flashcard
 from database.database import get_db
 from utils.utils import generate_example_and_notes, translate_word, get_pos
 from api.schemas import PaginatedFlashcardResponse, FlashcardUpdate, FlashcardResponse
-from typing import List
 from sqlalchemy.future import select
 from fastapi import Query
 from sqlalchemy import func
