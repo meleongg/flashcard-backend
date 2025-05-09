@@ -15,3 +15,7 @@ class FlashcardResponse(BaseModel):
 
     class Config:
         orm_mode = True # tells pydantic to accept SQLAlchemy as input
+
+class PaginatedFlashcardResponse(BaseModel):
+    total: int
+    flashcards: List[FlashcardResponse]

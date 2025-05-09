@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from models.models import Flashcard
 from database.database import get_db
 from utils.utils import generate_example_and_notes, translate_word, get_pos
-from api.schemas import FlashcardResponse
+from api.schemas import PaginatedFlashcardResponse
 from typing import List
 from sqlalchemy.future import select
 from fastapi import Query
@@ -12,7 +12,7 @@ import uuid
 
 router = APIRouter()
 
-@router.get("/flashcards", response_model=List[FlashcardResponse])
+@router.get("/flashcards", response_model=PaginatedFlashcardResponse)
 async def get_flashcards(
     user_id: str,
     skip: int = Query(0, ge=0),
