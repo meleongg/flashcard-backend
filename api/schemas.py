@@ -2,6 +2,17 @@ from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime
 
+class FlashcardUpdate(BaseModel):
+    word: Optional[str]
+    translation: Optional[str]
+    phonetic: Optional[str]
+    pos: Optional[str]
+    example: Optional[str]
+    notes: Optional[str]
+
+    class Config:
+        orm_mode = True
+
 class FlashcardResponse(BaseModel):
     id: str
     word: str

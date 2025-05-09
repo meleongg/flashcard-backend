@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from models.models import Flashcard
 from database.database import get_db
 from utils.utils import generate_example_and_notes, translate_word, get_pos
-from api.schemas import PaginatedFlashcardResponse
+from api.schemas import PaginatedFlashcardResponse, FlashcardUpdate
 from typing import List
 from sqlalchemy.future import select
 from fastapi import Query
@@ -46,6 +46,30 @@ async def get_flashcards(
 
     return {"total": total, "flashcards": flashcards}
 
+@router.put("/flashcard/{flashcard_id}")
+async def update_flashcard(
+    flashcard_id: str,
+    payload: FlashcardUpdate,
+    user_id: str = Query(...),
+    db: AsyncSession = Depends(get_db),
+):
+    # Fetch the flashcard
+    result = await db.execute(
+        select(Flashcard).where(Flashcard.id == flashcard_id, Flashcard.user_id == user_id)
+    )
+    flashcard = result.scalar_one_or_none()
+
+    if not flashcard:
+        raise HTTPException(status_code=404, detail="Flashcard not found")
+
+    # Update fields
+    for field, value in payload.dict(exclude_unset=True).items():
+        setattr(flashcard, field, value)
+
+    await db.commit()
+    await db.refresh(flashcard)
+
+    return flashcard
 
 @router.post("/flashcard")
 async def generate_flashcard(payload: dict, db: AsyncSession = Depends(get_db)):
