@@ -7,6 +7,20 @@ from datetime import datetime
 
 Base = declarative_base()
 
+class Folder(Base):
+    __tablename__ = "Folder"
+
+    id = Column(String, primary_key=True, index=True)
+    name = Column(String)
+    user_id = Column(String, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    flashcards = relationship(
+        "Flashcard",
+        back_populates="folder",
+        passive_deletes=True,
+    )
+
 class Flashcard(Base):
   __tablename__ = "Flashcard"
 
@@ -20,6 +34,9 @@ class Flashcard(Base):
   user_id = Column("userId", String, ForeignKey("User.id"), nullable=False)
   user = relationship("User", back_populates="flashcards")
   created_at = Column("createdAt", DateTime, default=lambda: datetime.utcnow())
+
+  folder_id = Column(String, ForeignKey("Folder.id", ondelete="SET NULL"), nullable=True)
+  folder = relationship("Folder", back_populates="flashcards")
 
 class User(Base):
     __tablename__ = "User"

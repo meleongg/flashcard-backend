@@ -1,24 +1,30 @@
 import sys
 import os
 
-# Append the parent directory (project root) to sys.path
+# Ensure project root is in path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
+import argparse
 import uuid
 from datetime import datetime
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import text
-from models.models import Flashcard
+from models.models import Flashcard, Folder
 import asyncio
 from database.database import engine
-import os
 from dotenv import load_dotenv
 
 load_dotenv()
 user_id = os.getenv("SEED_USER_ID")
 
 AsyncSessionLocal = sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
+
+sample_folders = [
+    {"name": "Basics"},
+    {"name": "Verbs"},
+    {"name": "Adjectives"},
+]
 
 sample_flashcards = [
     {
@@ -63,8 +69,22 @@ sample_flashcards = [
     },
 ]
 
-async def seed_flashcards():
+async def seed_data():
     async with AsyncSessionLocal() as session:
+        # Seed folders
+        folders = []
+        for folder_data in sample_folders:
+            folder = Folder(
+                id=str(uuid.uuid4()),
+                name=folder_data["name"],
+                user_id=user_id,
+                created_at=datetime.utcnow()  # ✅ Include created_at
+            )
+            session.add(folder)
+            folders.append(folder)
+        await session.flush()  # Ensure folder IDs are available
+
+        # Seed flashcards (assign all to the first folder for simplicity)
         for data in sample_flashcards:
             flashcard = Flashcard(
                 id=str(uuid.uuid4()),
@@ -75,18 +95,27 @@ async def seed_flashcards():
                 example=data["example"],
                 notes=data["notes"],
                 user_id=user_id,
+                folder_id=folders[0].id,
                 created_at=datetime.utcnow()
             )
             session.add(flashcard)
-        await session.commit()
-        print("✅ Seeded flashcards!")
 
-async def clear_flashcards():
+        await session.commit()
+        print("✅ Seeded folders and flashcards!")
+
+async def clear_data():
     async with AsyncSessionLocal() as session:
         await session.execute(text('DELETE FROM "Flashcard"'))
+        await session.execute(text('DELETE FROM "Folder"'))
         await session.commit()
-        print("🧹 Cleared flashcards.")
+        print("🧹 Cleared all flashcards and folders.")
 
-# Uncomment the line you want to run:
-asyncio.run(seed_flashcards())
-# asyncio.run(clear_flashcards())
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("action", choices=["seed", "clear"], help="Choose to seed or clear the database.")
+    args = parser.parse_args()
+
+    if args.action == "seed":
+        asyncio.run(seed_data())
+    elif args.action == "clear":
+        asyncio.run(clear_data())

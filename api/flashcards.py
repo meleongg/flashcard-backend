@@ -2,10 +2,10 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy import func
-from models.models import Flashcard
+from models.models import Flashcard, Folder
 from database.database import get_db
 from utils.utils import generate_example_and_notes, translate_word, get_pos
-from api.schemas import PaginatedFlashcardResponse, FlashcardUpdate, FlashcardResponse
+from api.schemas import PaginatedFlashcardResponse, FlashcardUpdate, FlashcardResponse, FlashcardCreate, FlashcardFolderUpdate
 from auth.dependencies import get_current_user
 import uuid
 import os
@@ -80,11 +80,13 @@ async def update_flashcard(
 
 @router.post("/flashcard", response_model=FlashcardResponse)
 async def generate_flashcard(
-    payload: dict,
+    flashcard_data: FlashcardCreate,
     db: AsyncSession = Depends(get_db),
     user_id: str = Depends(get_current_user)
 ):
-    word = payload.get("word")
+    word = flashcard_data.word
+    folder_id = flashcard_data.folder_id
+
     if not word:
         raise HTTPException(status_code=400, detail="Missing word")
 
@@ -101,6 +103,7 @@ async def generate_flashcard(
         pos=pos,
         example=example,
         notes=notes,
+        folder_id=folder_id,
         user_id=user_id
     )
 
@@ -108,3 +111,32 @@ async def generate_flashcard(
     await db.commit()
     await db.refresh(new_flashcard)
     return new_flashcard
+
+@router.put("/flashcard/{flashcard_id}/folder", response_model=FlashcardResponse)
+async def assign_flashcard_to_folder(
+    flashcard_id: str,
+    folder_update: FlashcardFolderUpdate,
+    db: AsyncSession = Depends(get_db),
+    user_id: str = Depends(get_current_user)
+):
+    # Check the flashcard belongs to the user
+    result = await db.execute(
+        select(Flashcard).where(Flashcard.id == flashcard_id, Flashcard.user_id == user_id)
+    )
+    flashcard = result.scalars().first()
+    if not flashcard:
+        raise HTTPException(status_code=404, detail="Flashcard not found")
+
+    # If folder_id is set, check that it belongs to the user
+    if folder_update.folder_id:
+        folder_result = await db.execute(
+            select(Folder).where(Folder.id == folder_update.folder_id, Folder.user_id == user_id)
+        )
+        folder = folder_result.scalars().first()
+        if not folder:
+            raise HTTPException(status_code=404, detail="Folder not found")
+
+    flashcard.folder_id = folder_update.folder_id
+    await db.commit()
+    await db.refresh(flashcard)
+    return flashcard

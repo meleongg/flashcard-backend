@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from api.flashcards import router as flashcard_router
+from api.flashcards import router as flashcards_router
+from api.folders import router as folders_router
 
 app = FastAPI()
 
@@ -14,4 +15,5 @@ app.add_middleware(
 )
 
 # Route registration
-app.include_router(flashcard_router)
+app.include_router(flashcards_router)
+app.include_router(folders_router)
