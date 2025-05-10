@@ -1,5 +1,31 @@
 import spacy
+import os
+import re
 from api.schemas import FlashcardData
+from langdetect import detect_langs
+from openai import OpenAI
+from dotenv import load_dotenv
+
+load_dotenv()
+
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+def detect_language(text: str, threshold: float = 0.8) -> str:
+    try:
+        # Use langdetect to get language probabilities
+        langs = detect_langs(text)
+        if langs:
+            top_lang = langs[0]
+            if top_lang.prob >= threshold:
+                return top_lang.lang
+    except Exception:
+        pass  # fall through to heuristics
+
+    # Heuristic fallback for Mandarin: check for Chinese characters
+    if re.search(r'[\u4e00-\u9fff]', text):
+        return "zh"
+
+    return "unknown"
 
 async def generate_flashcard_data(word: str, source_lang: str, target_lang: str) -> FlashcardData:
     translation = translate_word(word, source_lang, target_lang)

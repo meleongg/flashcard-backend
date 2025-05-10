@@ -4,8 +4,8 @@ from sqlalchemy.future import select
 from sqlalchemy import func
 from models.models import Flashcard, Folder
 from database.database import get_db
-from utils.utils import generate_example_and_notes, translate_word, get_pos
-from api.schemas import PaginatedFlashcardResponse, FlashcardUpdate, FlashcardResponse, FlashcardCreate, FlashcardFolderUpdate
+from utils.utils import generate_example_and_notes, translate_word, get_pos, detect_language
+from api.schemas import PaginatedFlashcardResponse, FlashcardUpdate, FlashcardResponse, FlashcardCreate, FlashcardFolderUpdate, FlashcardPreview
 from auth.dependencies import get_current_user
 import uuid
 import os
@@ -145,8 +145,6 @@ async def assign_flashcard_to_folder(
     await db.refresh(flashcard)
     return flashcard
 
-from api.schemas import FlashcardPreview  # add this if not already imported
-
 @router.post("/flashcard-preview", response_model=FlashcardPreview)
 async def preview_flashcard(
     payload: dict,
@@ -158,6 +156,14 @@ async def preview_flashcard(
 
     if not word:
         raise HTTPException(status_code=400, detail="Word is required")
+
+    # Auto-detect source language if not provided
+    if not source_lang or source_lang == "auto":
+        source_lang = detect_language(word)
+
+    # Default target language
+    if not target_lang:
+        target_lang = "zh" if source_lang == "en" else "en"
 
     return {
         "word": word,
