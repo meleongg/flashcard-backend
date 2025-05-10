@@ -175,3 +175,19 @@ async def preview_flashcard(
         "source_lang": source_lang,
         "target_lang": target_lang
     }
+
+@router.get("/flashcard/{flashcard_id}", response_model=FlashcardResponse)
+async def get_flashcard_detail(
+    flashcard_id: str,
+    db: AsyncSession = Depends(get_db),
+    user_id: str = Depends(get_current_user)
+):
+    result = await db.execute(
+        select(Flashcard).where(Flashcard.id == flashcard_id, Flashcard.user_id == user_id)
+    )
+    flashcard = result.scalars().first()
+
+    if not flashcard:
+        raise HTTPException(status_code=404, detail="Flashcard not found")
+
+    return flashcard

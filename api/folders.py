@@ -1,10 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from models.models import Folder
+from sqlalchemy import and_
+from models.models import Folder, Flashcard
 from database.database import get_db
 from auth.dependencies import get_current_user
-from api.schemas import FolderCreate, FolderResponse
+from api.schemas import FolderCreate, FolderResponse, FlashcardResponse
 import uuid
 
 router = APIRouter()
@@ -66,3 +67,41 @@ async def update_folder_name(folder_id: str, folder_data: FolderCreate, db: Asyn
     await db.commit()
     await db.refresh(folder)
     return folder
+
+@router.get("/folder/{folder_id}", response_model=FolderResponse)
+async def get_folder_detail(
+    folder_id: str,
+    db: AsyncSession = Depends(get_db),
+    user_id: str = Depends(get_current_user)
+):
+    result = await db.execute(
+        select(Folder).where(Folder.id == folder_id, Folder.user_id == user_id)
+    )
+    folder = result.scalars().first()
+
+    if not folder:
+        raise HTTPException(status_code=404, detail="Folder not found")
+
+    return folder
+
+@router.get("/folder/{folder_id}/flashcards", response_model=list[FlashcardResponse])
+async def get_flashcards_by_folder(
+    folder_id: str,
+    db: AsyncSession = Depends(get_db),
+    user_id: str = Depends(get_current_user)
+):
+    result = await db.execute(
+        select(Flashcard).where(
+            and_(
+                Flashcard.folder_id == folder_id,
+                Flashcard.user_id == user_id
+            )
+        )
+    )
+    flashcards = result.scalars().all()
+
+    if not flashcards:
+        # optional: still 200 OK with empty list, or raise 404 if preferred
+        return []
+
+    return flashcards
