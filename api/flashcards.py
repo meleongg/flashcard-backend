@@ -86,6 +86,8 @@ async def generate_flashcard(
 ):
     word = flashcard_data.word
     folder_id = flashcard_data.folder_id
+    source_lang = getattr(flashcard_data, "source_lang", "en")
+    target_lang = getattr(flashcard_data, "target_lang", "zh")
 
     if not word:
         raise HTTPException(status_code=400, detail="Missing word")
@@ -104,7 +106,9 @@ async def generate_flashcard(
         example=example,
         notes=notes,
         folder_id=folder_id,
-        user_id=user_id
+        user_id=user_id,
+        source_lang=source_lang,
+        target_lang=target_lang,
     )
 
     db.add(new_flashcard)
@@ -146,9 +150,12 @@ from api.schemas import FlashcardPreview  # add this if not already imported
 @router.post("/flashcard-preview", response_model=FlashcardPreview)
 async def preview_flashcard(
     payload: dict,
-    user_id: str = Depends(get_current_user)  # still validate auth
+    user_id: str = Depends(get_current_user)
 ):
     word = payload.get("word")
+    source_lang = payload.get("source_lang", "en")
+    target_lang = payload.get("target_lang", "zh")
+
     if not word:
         raise HTTPException(status_code=400, detail="Word is required")
 
@@ -159,4 +166,6 @@ async def preview_flashcard(
         "pos": get_pos(word),
         "example": generate_example_and_notes(word)[0],
         "notes": generate_example_and_notes(word)[1],
+        "source_lang": source_lang,
+        "target_lang": target_lang
     }

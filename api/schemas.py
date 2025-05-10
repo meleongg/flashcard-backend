@@ -2,19 +2,44 @@ from pydantic import BaseModel, Field
 from typing import List, Optional
 from datetime import datetime
 
+class FlashcardData(BaseModel):
+    word: str
+    translation: str
+    phonetic: str
+    pos: str
+    example: str
+    notes: str
+    source_lang: Optional[str] = "en"
+    target_lang: Optional[str] = "zh"
 class FlashcardFolderUpdate(BaseModel):
     folder_id: str | None  # allow null to remove from folder
+
 class FlashcardCreate(BaseModel):
-    word: str = Field(..., min_length=1, max_length=100)
-    userId: str = Field(..., min_length=5)
+    word: str
+    folder_id: Optional[str] = None
+    source_lang: str = "en"
+    target_lang: str = "zh"
+
+class FlashcardResponse(FlashcardCreate):
+    id: str
+    translation: str
+    phonetic: str
+    pos: str
+    example: str
+    notes: str
+
+    class Config:
+        orm_mode = True
 
 class FlashcardPreview(BaseModel):
     word: str
     translation: str
     phonetic: str
-    pos: Optional[str]
+    pos: str
     example: str
     notes: str
+    source_lang: str
+    target_lang: str
 
 class FlashcardUpdate(BaseModel):
     word: Optional[str] = Field(None, min_length=1, max_length=100)
@@ -33,6 +58,8 @@ class FlashcardResponse(BaseModel):
     pos: Optional[str] = None
     example: str
     notes: str
+    source_lang: str
+    target_lang: str
     user_id: str
     created_at: datetime
     folder_id: Optional[str] = None

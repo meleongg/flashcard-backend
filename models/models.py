@@ -21,22 +21,26 @@ class Folder(Base):
         passive_deletes=True,
     )
 
+
 class Flashcard(Base):
-  __tablename__ = "Flashcard"
+    __tablename__ = "Flashcard"
 
-  id = Column(String, primary_key=True, index=True)
-  word = Column(String, nullable=False)
-  translation = Column(String, nullable=False)
-  phonetic = Column(String, nullable=False)
-  pos = Column(String, nullable=True)
-  example = Column(Text, nullable=False)
-  notes = Column(Text, nullable=False)
-  user_id = Column("userId", String, ForeignKey("User.id"), nullable=False)
-  user = relationship("User", back_populates="flashcards")
-  created_at = Column("createdAt", DateTime, default=lambda: datetime.utcnow())
+    id = Column(String, primary_key=True, index=True)
+    word = Column(String, nullable=False)
+    translation = Column(String, nullable=False)
+    phonetic = Column(String)
+    pos = Column(String)
+    example = Column(Text)
+    notes = Column(Text)
+    source_lang = Column(String, nullable=False, default="en")
+    target_lang = Column(String, nullable=False, default="zh")
+    created_at = Column(DateTime, default=datetime.utcnow)
 
-  folder_id = Column(String, ForeignKey("Folder.id", ondelete="SET NULL"), nullable=True)
-  folder = relationship("Folder", back_populates="flashcards")
+    user_id = Column(String, ForeignKey("User.id"), nullable=False)
+    folder_id = Column(String, ForeignKey("Folder.id"), nullable=True)
+
+    folder = relationship("Folder", back_populates="flashcards")
+    user = relationship("User", back_populates="flashcards")
 
 class User(Base):
     __tablename__ = "User"
@@ -44,4 +48,4 @@ class User(Base):
     id = Column(String, primary_key=True)
     email = Column(String, unique=True, index=True)
 
-    flashcards = relationship("Flashcard", back_populates="user")
+    flashcards = relationship("Flashcard", back_populates="user", cascade="all, delete")
