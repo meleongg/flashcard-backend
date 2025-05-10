@@ -36,20 +36,21 @@ async def delete_flashcard(
 async def get_flashcards(
     skip: int = Query(0, ge=0),
     limit: int = Query(10, ge=1, le=100),
+    folder_id: str | None = Query(None),
     db: AsyncSession = Depends(get_db),
-    user_id: str = Depends(get_current_user)
+    user_id: str = Depends(get_current_user),
 ):
-    result = await db.execute(
-        select(Flashcard)
-        .where(Flashcard.user_id == user_id)
-        .offset(skip)
-        .limit(limit)
-    )
+    base_query = select(Flashcard).where(Flashcard.user_id == user_id)
+    count_query = select(func.count()).select_from(Flashcard).where(Flashcard.user_id == user_id)
+
+    if folder_id:
+        base_query = base_query.where(Flashcard.folder_id == folder_id)
+        count_query = count_query.where(Flashcard.folder_id == folder_id)
+
+    result = await db.execute(base_query.offset(skip).limit(limit))
     flashcards = result.scalars().all()
 
-    count_result = await db.execute(
-        select(func.count()).select_from(Flashcard).where(Flashcard.user_id == user_id)
-    )
+    count_result = await db.execute(count_query)
     total = count_result.scalar_one()
 
     return {"total": total, "flashcards": flashcards}

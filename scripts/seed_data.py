@@ -84,8 +84,9 @@ async def seed_data():
             folders.append(folder)
         await session.flush()  # Ensure folder IDs are available
 
-        # Seed flashcards (assign all to the first folder for simplicity)
-        for data in sample_flashcards:
+        # Seed flashcards and assign to folders (e.g., round-robin assignment)
+        for i, data in enumerate(sample_flashcards):
+            assigned_folder = folders[i % len(folders)]  # cycle through folders
             flashcard = Flashcard(
                 id=str(uuid.uuid4()),
                 word=data["word"],
@@ -95,7 +96,7 @@ async def seed_data():
                 example=data["example"],
                 notes=data["notes"],
                 user_id=user_id,
-                folder_id=folders[0].id,
+                folder_id=assigned_folder.id,
                 created_at=datetime.utcnow()
             )
             session.add(flashcard)
