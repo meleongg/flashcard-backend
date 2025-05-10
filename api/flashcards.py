@@ -78,7 +78,6 @@ async def update_flashcard(
     await db.refresh(flashcard)
     return flashcard
 
-
 @router.post("/flashcard", response_model=FlashcardResponse)
 async def generate_flashcard(
     flashcard_data: FlashcardCreate,
@@ -141,3 +140,23 @@ async def assign_flashcard_to_folder(
     await db.commit()
     await db.refresh(flashcard)
     return flashcard
+
+from api.schemas import FlashcardPreview  # add this if not already imported
+
+@router.post("/flashcard-preview", response_model=FlashcardPreview)
+async def preview_flashcard(
+    payload: dict,
+    user_id: str = Depends(get_current_user)  # still validate auth
+):
+    word = payload.get("word")
+    if not word:
+        raise HTTPException(status_code=400, detail="Word is required")
+
+    return {
+        "word": word,
+        "translation": translate_word(word),
+        "phonetic": "-".join(word),
+        "pos": get_pos(word),
+        "example": generate_example_and_notes(word)[0],
+        "notes": generate_example_and_notes(word)[1],
+    }

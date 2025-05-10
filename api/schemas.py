@@ -8,6 +8,14 @@ class FlashcardCreate(BaseModel):
     word: str = Field(..., min_length=1, max_length=100)
     userId: str = Field(..., min_length=5)
 
+class FlashcardPreview(BaseModel):
+    word: str
+    translation: str
+    phonetic: str
+    pos: Optional[str]
+    example: str
+    notes: str
+
 class FlashcardUpdate(BaseModel):
     word: Optional[str] = Field(None, min_length=1, max_length=100)
     translation: Optional[str] = Field(None, max_length=100)
