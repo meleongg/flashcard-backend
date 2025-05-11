@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, DateTime, ForeignKey, Boolean
+from sqlalchemy import Column, String, DateTime, ForeignKey, Boolean, Integer
 from sqlalchemy.orm import relationship
 from datetime import datetime
 
@@ -13,11 +13,16 @@ class QuizSession(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     include_reverse = Column(Boolean, default=False)
-    card_count = Column(String)
+    card_count = Column(Integer)
 
     user = relationship("User", back_populates="quiz_sessions")
     folder = relationship("Folder")
-    answers = relationship("QuizAnswerLog", back_populates="session", cascade="all, delete")
+    answers = relationship(
+        "QuizAnswerLog",
+        back_populates="session",
+        cascade="all, delete",
+        lazy="selectin", # make them loaded on request (instead of lazily)
+    )
 
 
 class QuizAnswerLog(Base):

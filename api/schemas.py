@@ -2,6 +2,12 @@ from pydantic import BaseModel, Field
 from typing import List, Optional
 from datetime import datetime
 
+class UserRead(BaseModel):
+    id: str
+    email: Optional[str] = None
+
+    class Config:
+        orm_mode = True
 class FlashcardData(BaseModel):
     word: str
     translation: str

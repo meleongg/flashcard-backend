@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from sqlalchemy.orm import selectinload
 from random import shuffle
 from typing import List
 import uuid
@@ -133,15 +134,15 @@ async def get_session_by_id(
     user_id: str = Depends(get_current_user),
 ):
     result = await db.execute(
-        select(QuizSession).where(QuizSession.id == session_id, QuizSession.user_id == user_id)
+        select(QuizSession)
+        .options(selectinload(QuizSession.answers))  # 🪄 ensure answers are preloaded
+        .where(QuizSession.id == session_id, QuizSession.user_id == user_id)
     )
+
     session = result.scalars().first()
+
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
 
-    # Manually load answers
-    answers_result = await db.execute(
-        select(QuizAnswerLog).where(QuizAnswerLog.session_id == session.id)
-    )
-    session.answers = answers_result.scalars().all()
+    # Don't access session.answers after this point without eager load
     return session
