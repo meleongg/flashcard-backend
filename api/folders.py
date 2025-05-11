@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy import and_
-from models.models import Folder, Flashcard
+from models import Folder, Flashcard
 from database.database import get_db
 from auth.dependencies import get_current_user
 from api.schemas import FolderCreate, FolderResponse, FlashcardResponse

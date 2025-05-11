@@ -82,3 +82,34 @@ class FolderResponse(BaseModel):
 
     class Config:
         orm_mode = True
+
+class QuizAnswerLogBase(BaseModel):
+    flashcard_id: str
+    is_correct: bool
+
+class QuizAnswerLogCreate(QuizAnswerLogBase):
+    session_id: str
+
+class QuizAnswerLogResponse(QuizAnswerLogBase):
+    id: str
+    answered_at: datetime
+
+    class Config:
+        orm_mode = True
+
+class QuizSessionBase(BaseModel):
+    folder_id: Optional[str] = None
+    include_reverse: bool = False
+    card_count: int = 10
+
+class QuizSessionCreate(QuizSessionBase):
+    pass
+
+class QuizSessionResponse(QuizSessionBase):
+    id: str
+    user_id: str
+    created_at: datetime
+    answers: List[QuizAnswerLogResponse] = []
+
+    class Config:
+        orm_mode = True

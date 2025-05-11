@@ -4,7 +4,7 @@ import sys
 
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
-from models.models import Base
+from models import Base
 from database.database import engine
 
 async def drop_models():
