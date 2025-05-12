@@ -119,3 +119,14 @@ class QuizSessionResponse(QuizSessionBase):
 
     class Config:
         orm_mode = True
+
+class UserStatsResponse(BaseModel):
+    total_quizzes: int
+    total_answers: int
+    correct_answers: int
+    accuracy_percent: float
+    streak_days: int
+    recent_activity: List[datetime]
+
+    class Config:
+        orm_mode = True
