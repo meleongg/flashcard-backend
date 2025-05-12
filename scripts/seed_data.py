@@ -14,7 +14,7 @@ from sqlalchemy import text
 from dotenv import load_dotenv
 
 from database.database import engine
-from models import Flashcard, Folder  # Import from new structure
+from models import Flashcard, Folder, UserSettings
 
 load_dotenv()
 user_id = os.getenv("SEED_USER_ID")
@@ -85,6 +85,19 @@ sample_flashcards = [
 
 async def seed_data():
     async with AsyncSessionLocal() as session:
+        # ✅ Create default settings for the user
+        settings = UserSettings(
+            user_id=user_id,
+            default_source_lang="en",
+            default_target_lang="zh",
+            default_quiz_length=10,
+            auto_tts=True,
+            reverse_quiz_default=False,
+            dark_mode=False,
+            daily_learning_goal=10,
+        )
+        session.add(settings)
+
         folders = []
         for folder_data in sample_folders:
             folder = Folder(
@@ -95,7 +108,7 @@ async def seed_data():
             )
             session.add(folder)
             folders.append(folder)
-        await session.flush()  # Ensure folder IDs are available
+        await session.flush()
 
         for i, data in enumerate(sample_flashcards):
             assigned_folder = folders[i % len(folders)]
@@ -116,14 +129,15 @@ async def seed_data():
             session.add(flashcard)
 
         await session.commit()
-        print("✅ Seeded folders and flashcards!")
+        print("✅ Seeded user settings, folders, and flashcards!")
 
 async def clear_data():
     async with AsyncSessionLocal() as session:
         await session.execute(text('DELETE FROM "Flashcard"'))
         await session.execute(text('DELETE FROM "Folder"'))
+        await session.execute(text('DELETE FROM "UserSettings"'))
         await session.commit()
-        print("🧹 Cleared all flashcards and folders.")
+        print("🧹 Cleared flashcards, folders, and user settings.")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Seed or clear flashcard data.")

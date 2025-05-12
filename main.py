@@ -4,6 +4,7 @@ from api.flashcards import router as flashcards_router
 from api.folders import router as folders_router
 from api.quiz import router as quiz_router
 from api.stats import router as stats_router
+from api.settings import router as settings_router
 
 app = FastAPI()
 
@@ -24,3 +25,4 @@ app.include_router(flashcards_router)
 app.include_router(folders_router)
 app.include_router(quiz_router)
 app.include_router(stats_router)
+app.include_router(settings_router)

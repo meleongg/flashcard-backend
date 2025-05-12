@@ -130,3 +130,24 @@ class UserStatsResponse(BaseModel):
 
     class Config:
         orm_mode = True
+
+class UserSettingsResponse(BaseModel):
+    default_source_lang: str
+    default_target_lang: str
+    default_quiz_length: int
+    auto_tts: bool
+    reverse_quiz_default: bool
+    dark_mode: bool
+    daily_learning_goal: int
+
+    class Config:
+        orm_mode = True
+
+class UserSettingsUpdate(BaseModel):
+    default_source_lang: Optional[str]
+    default_target_lang: Optional[str]
+    default_quiz_length: Optional[int]
+    auto_tts: Optional[bool]
+    reverse_quiz_default: Optional[bool]
+    dark_mode: Optional[bool]
+    daily_learning_goal: Optional[int]
