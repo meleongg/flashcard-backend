@@ -162,3 +162,16 @@ class UserSettingsUpdate(BaseModel):
     reverse_quiz_default: Optional[bool]
     dark_mode: Optional[bool]
     daily_learning_goal: Optional[int]
+
+class FlashcardReviewPreview(BaseModel):
+    id: str
+    word: str
+    translation: str
+    phonetic: Optional[str]
+    pos: Optional[str]
+    example: Optional[str]
+    next_review_date: Optional[datetime]
+    interval: int
+
+    class Config:
+        orm_mode = True

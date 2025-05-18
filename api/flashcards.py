@@ -12,7 +12,8 @@ from api.schemas import (
   FlashcardCreate,
   FlashcardFolderUpdate,
   FlashcardPreview,
-  SpacedRepetitionMetadata
+  SpacedRepetitionMetadata,
+  FlashcardReviewPreview
 )
 from auth.dependencies import get_current_user
 from datetime import date, timedelta
@@ -319,3 +320,32 @@ async def reset_flashcard_review(
     flashcard.next_review_date = None
 
     await db.commit()
+
+@router.get("/flashcards/review/preview", response_model=List[FlashcardReviewPreview])
+async def preview_upcoming_reviews(
+    limit: int = Query(5, ge=1, le=20),
+    db: AsyncSession = Depends(get_db),
+    user_id: str = Depends(get_current_user)
+):
+    result = await db.execute(
+        select(Flashcard)
+        .where(Flashcard.user_id == user_id)
+        .where(Flashcard.next_review_date.isnot(None))
+        .order_by(Flashcard.next_review_date.asc())
+        .limit(limit)
+    )
+    flashcards = result.scalars().all()
+
+    return [
+        FlashcardReviewPreview(
+            id=f.id,
+            word=f.word,
+            translation=f.translation,
+            phonetic=f.phonetic,
+            pos=f.pos,
+            example=f.example,
+            next_review_date=f.next_review_date,
+            interval=f.interval
+        )
+        for f in flashcards
+    ]
