@@ -7,12 +7,12 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 import argparse
 import uuid
 import asyncio
-from datetime import datetime
+import random
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import text
 from dotenv import load_dotenv
-
+from datetime import datetime, timedelta, date
 from database.database import engine
 from models import Flashcard, Folder, UserSettings
 
@@ -112,6 +112,14 @@ async def seed_data():
 
         for i, data in enumerate(sample_flashcards):
             assigned_folder = folders[i % len(folders)]
+
+            # Simulate spaced repetition metadata
+            review_count = random.randint(0, 5)
+            interval = random.choice([0, 1, 3, 5, 10])
+            ease_factor = round(random.uniform(1.3, 2.6), 2)
+            last_reviewed = date.today() - timedelta(days=interval) if review_count > 0 else None
+            next_review_date = last_reviewed + timedelta(days=interval) if last_reviewed else None
+
             flashcard = Flashcard(
                 id=str(uuid.uuid4()),
                 word=data["word"],
@@ -125,6 +133,13 @@ async def seed_data():
                 user_id=user_id,
                 folder_id=assigned_folder.id,
                 created_at=datetime.utcnow(),
+
+                # Spaced repetition fields
+                review_count=review_count,
+                interval=interval,
+                ease_factor=ease_factor,
+                last_reviewed=last_reviewed,
+                next_review_date=next_review_date,
             )
             session.add(flashcard)
 

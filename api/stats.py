@@ -3,7 +3,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy import func
 from datetime import datetime, timedelta
-from typing import List
 
 from database.database import get_db
 from auth.dependencies import get_current_user
