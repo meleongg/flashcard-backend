@@ -15,6 +15,7 @@ from dotenv import load_dotenv
 from datetime import datetime, timedelta, date
 from database.database import engine
 from models import Flashcard, Folder, UserSettings
+from models.review import ReviewSession, ReviewEvent
 
 load_dotenv()
 user_id = os.getenv("SEED_USER_ID")
@@ -142,17 +143,47 @@ async def seed_data():
                 next_review_date=next_review_date,
             )
             session.add(flashcard)
+        await session.flush()
+
+        # Optional: seed review sessions
+        for _ in range(2):  # Create 2 fake review sessions
+            review_session_id = str(uuid.uuid4())
+            session.add(ReviewSession(
+                id=review_session_id,
+                user_id=user_id,
+                created_at=datetime.utcnow() - timedelta(days=random.randint(0, 5))
+            ))
+
+            # Add 3–5 fake review events per session
+            reviewed_flashcards = random.sample(sample_flashcards, k=random.randint(3, 5))
+            for flash_data in reviewed_flashcards:
+                matching = await session.execute(
+                    text('SELECT id FROM "Flashcard" WHERE word = :word AND user_id = :user_id'),
+                    {"word": flash_data["word"], "user_id": user_id}
+                )
+                flashcard_id = matching.scalar()
+                if flashcard_id:
+                    session.add(ReviewEvent(
+                        id=str(uuid.uuid4()),
+                        session_id=review_session_id,
+                        user_id=user_id,
+                        flashcard_id=flashcard_id,
+                        rating=random.randint(1, 5),
+                        created_at=datetime.utcnow()
+                    ))
 
         await session.commit()
-        print("✅ Seeded user settings, folders, and flashcards!")
+        print("✅ Seeded user settings, folders, flashcards, and review events!")
 
 async def clear_data():
     async with AsyncSessionLocal() as session:
+        await session.execute(text('DELETE FROM "ReviewEvent"'))
+        await session.execute(text('DELETE FROM "ReviewSession"'))
         await session.execute(text('DELETE FROM "Flashcard"'))
         await session.execute(text('DELETE FROM "Folder"'))
         await session.execute(text('DELETE FROM "UserSettings"'))
         await session.commit()
-        print("🧹 Cleared flashcards, folders, and user settings.")
+        print("🧹 Cleared review events, sessions, flashcards, folders, and user settings.")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Seed or clear flashcard data.")

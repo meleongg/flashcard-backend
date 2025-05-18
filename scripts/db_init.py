@@ -5,7 +5,7 @@ import sys
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
 from database.database import engine
-from models import Folder, Flashcard, QuizSession, QuizAnswerLog, UserSettings
+from models import Folder, Flashcard, QuizSession, QuizAnswerLog, UserSettings, ReviewEvent, ReviewSession
 from models.base import Base
 
 async def init_app_models():
@@ -18,6 +18,8 @@ async def init_app_models():
                 QuizSession.__table__,
                 QuizAnswerLog.__table__,
                 UserSettings.__table__,
+                ReviewSession.__table__,
+                ReviewEvent.__table__,
             ]
         ))
 

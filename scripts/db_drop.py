@@ -6,7 +6,7 @@ sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
 from sqlalchemy import text
 from database.database import engine
-from models import Folder, Flashcard, QuizSession, QuizAnswerLog, UserSettings
+from models import Folder, Flashcard, QuizSession, QuizAnswerLog, UserSettings, ReviewEvent, ReviewSession
 from models.base import Base
 
 async def drop_app_models():
@@ -19,6 +19,8 @@ async def drop_app_models():
                 Flashcard.__table__,
                 Folder.__table__,
                 UserSettings.__table__,
+                ReviewSession.__table__,
+                ReviewEvent.__table__,
             ]
         ))
 
