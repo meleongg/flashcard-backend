@@ -26,6 +26,16 @@ class FlashcardCreate(BaseModel):
     source_lang: str = "en"
     target_lang: str = "zh"
 
+class SpacedRepetitionMetadata(BaseModel):
+    review_count: int
+    interval: int
+    ease_factor: float
+    last_reviewed: Optional[datetime]
+    next_review_date: Optional[datetime]
+
+    class Config:
+        orm_mode = True
+
 class FlashcardResponse(FlashcardCreate):
     id: str
     translation: str
@@ -70,6 +80,7 @@ class FlashcardResponse(BaseModel):
     created_at: datetime
     folder_id: Optional[str] = None
 
+    spaced_repetition: SpacedRepetitionMetadata
     class Config:
         orm_mode = True # tells pydantic to accept SQLAlchemy as input
 
