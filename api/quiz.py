@@ -6,6 +6,7 @@ from random import shuffle
 from typing import List
 import uuid
 from datetime import datetime
+from api.flashcards import to_flashcard_response
 
 from database.database import get_db
 from auth.dependencies import get_current_user
@@ -43,28 +44,34 @@ async def get_quiz_cards(
     shuffle(cards)
     selected = cards[:count]
 
-    # Reverse mode: test translation → word
     if include_reverse:
-        reversed_cards = [
-            FlashcardResponse(
-                id=c.id,
-                word=c.translation,
-                translation=c.word,
-                phonetic=c.phonetic,
-                pos=c.pos,
-                example=c.example,
-                notes=c.notes,
-                folder_id=c.folder_id,
-                user_id=c.user_id,
-                source_lang=c.target_lang,
-                target_lang=c.source_lang,
+        reversed_cards = []
+        for card in selected:
+            reversed_card = Flashcard(
+                id=card.id,
+                word=card.translation,
+                translation=card.word,
+                phonetic=card.phonetic,
+                pos=card.pos,
+                example=card.example,
+                notes=card.notes,
+                folder_id=card.folder_id,
+                user_id=card.user_id,
+                source_lang=card.target_lang,
+                target_lang=card.source_lang,
+                review_count=card.review_count,
+                interval=card.interval,
+                ease_factor=card.ease_factor,
+                last_reviewed=card.last_reviewed,
+                next_review_date=card.next_review_date,
+                created_at=card.created_at,
             )
-            for c in selected
-        ]
-        selected += reversed_cards
-        shuffle(selected)
+            reversed_cards.append(to_flashcard_response(reversed_card))
+        full_set = [to_flashcard_response(c) for c in selected] + reversed_cards
+        shuffle(full_set)
+        return full_set
 
-    return selected
+    return [to_flashcard_response(c) for c in selected]
 
 # Create a new quiz session
 @router.post("/quiz/session", response_model=QuizSessionResponse)

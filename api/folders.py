@@ -6,6 +6,7 @@ from models import Folder, Flashcard
 from database.database import get_db
 from auth.dependencies import get_current_user
 from api.schemas import FolderCreate, FolderResponse, FlashcardResponse
+from api.flashcards import to_flashcard_response
 import uuid
 
 router = APIRouter()
@@ -100,8 +101,4 @@ async def get_flashcards_by_folder(
     )
     flashcards = result.scalars().all()
 
-    if not flashcards:
-        # optional: still 200 OK with empty list, or raise 404 if preferred
-        return []
-
-    return flashcards
+    return [to_flashcard_response(f) for f in flashcards]
