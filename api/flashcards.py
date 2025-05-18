@@ -262,12 +262,24 @@ async def get_due_flashcards(
 async def review_flashcard(
     flashcard_id: str,
     quality: int = Body(..., embed=True),
+    session_id: str = Body(..., embed=True),  # New: require session ID
     db: AsyncSession = Depends(get_db),
     user_id: str = Depends(get_current_user)
 ):
+    from models.review import ReviewEvent, ReviewSession
+
     if quality < 0 or quality > 5:
         raise HTTPException(status_code=400, detail="Quality must be between 0 and 5")
 
+    # Validate session
+    session_check = await db.execute(
+        select(ReviewSession).where(ReviewSession.id == session_id, ReviewSession.user_id == user_id)
+    )
+    session = session_check.scalar_one_or_none()
+    if not session:
+        raise HTTPException(status_code=404, detail="Invalid or expired review session.")
+
+    # Fetch flashcard
     result = await db.execute(
         select(Flashcard)
         .where(Flashcard.id == flashcard_id)
@@ -277,6 +289,7 @@ async def review_flashcard(
     if not flashcard:
         raise HTTPException(status_code=404, detail="Flashcard not found")
 
+    # SM-2 Logic
     if quality < 3:
         flashcard.interval = 1
         flashcard.review_count = 0
@@ -288,38 +301,24 @@ async def review_flashcard(
             flashcard.interval = 6
         else:
             flashcard.interval = int(flashcard.interval * flashcard.ease_factor)
-
         flashcard.ease_factor = max(1.3, flashcard.ease_factor + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02)))
 
     flashcard.last_reviewed = date.today()
     flashcard.next_review_date = flashcard.last_reviewed + timedelta(days=flashcard.interval)
 
+    # Record ReviewEvent
+    review_event = ReviewEvent(
+        id=str(uuid.uuid4()),
+        session_id=session.id,
+        user_id=user_id,
+        flashcard_id=flashcard.id,
+        rating=quality
+    )
+    db.add(review_event)
+
     await db.commit()
     await db.refresh(flashcard)
     return to_flashcard_response(flashcard)
-
-@router.post("/flashcards/{flashcard_id}/reset", status_code=status.HTTP_204_NO_CONTENT)
-async def reset_flashcard_review(
-    flashcard_id: str,
-    db: AsyncSession = Depends(get_db),
-    user_id: str = Depends(get_current_user)
-):
-    result = await db.execute(
-        select(Flashcard)
-        .where(Flashcard.id == flashcard_id)
-        .where(Flashcard.user_id == user_id)
-    )
-    flashcard = result.scalar_one_or_none()
-    if not flashcard:
-        raise HTTPException(status_code=404, detail="Flashcard not found")
-
-    flashcard.review_count = 0
-    flashcard.interval = 0
-    flashcard.ease_factor = 2.5
-    flashcard.last_reviewed = None
-    flashcard.next_review_date = None
-
-    await db.commit()
 
 @router.get("/flashcards/review/preview", response_model=List[FlashcardReviewPreview])
 async def preview_upcoming_reviews(

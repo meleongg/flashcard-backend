@@ -10,3 +10,4 @@ class User(Base):
 
     flashcards = relationship("Flashcard", back_populates="user", cascade="all, delete")
     quiz_sessions = relationship("QuizSession", back_populates="user", cascade="all, delete")
+    review_sessions = relationship("ReviewSession", back_populates="user")

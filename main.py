@@ -5,6 +5,7 @@ from api.folders import router as folders_router
 from api.quiz import router as quiz_router
 from api.stats import router as stats_router
 from api.settings import router as settings_router
+from api.review import router as review_router
 
 app = FastAPI()
 
@@ -26,3 +27,4 @@ app.include_router(folders_router)
 app.include_router(quiz_router)
 app.include_router(stats_router)
 app.include_router(settings_router)
+app.include_router(review_router)

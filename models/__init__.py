@@ -4,6 +4,7 @@ from .folder import Folder
 from .flashcard import Flashcard
 from .quiz import QuizSession, QuizAnswerLog
 from .settings import UserSettings
+from .review import ReviewEvent, ReviewSession
 
 __all__ = [
     "Base",
@@ -12,5 +13,7 @@ __all__ = [
     "Flashcard",
     "QuizSession",
     "QuizAnswerLog",
-    "UserSettings"
+    "UserSettings",
+    "ReviewEvent",
+    "ReviewSession"
 ]
