@@ -14,5 +14,6 @@ class UserSettings(Base):
     auto_tts = Column(Boolean, default=True)
     reverse_quiz_default = Column(Boolean, default=False)
     dark_mode = Column(Boolean, default=False)
+    onboarding_completed = Column(Boolean, default=False)
 
     user = relationship("User")

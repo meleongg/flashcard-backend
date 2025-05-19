@@ -165,6 +165,7 @@ class UserSettingsResponse(BaseModel):
     reverse_quiz_default: bool
     dark_mode: bool
     daily_learning_goal: int
+    onboarding_completed: bool = False
 
     class Config:
         orm_mode = True
@@ -177,6 +178,7 @@ class UserSettingsUpdate(BaseModel):
     reverse_quiz_default: Optional[bool]
     dark_mode: Optional[bool]
     daily_learning_goal: Optional[int]
+    onboarding_completed: Optional[bool]
 
 class FlashcardReviewPreview(BaseModel):
     id: str
