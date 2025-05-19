@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy import func, case, distinct
 from datetime import datetime, timedelta
-
+from collections import Counter
 from database.database import get_db
 from auth.dependencies import get_current_user
 from models.quiz import QuizSession, QuizAnswerLog
@@ -153,3 +153,17 @@ async def get_activity_and_streak(db: AsyncSession, user_id: str):
         "streak_days": streak,
         "recent_activity": dates[-7:]
     }
+
+@router.get("/stats/pos-distribution")
+async def get_pos_distribution(
+    db: AsyncSession = Depends(get_db),
+    user_id: str = Depends(get_current_user),
+):
+    result = await db.execute(
+        select(Flashcard.pos).where(Flashcard.user_id == user_id)
+    )
+    pos_tags = result.scalars().all()
+
+    # Filter out null or empty
+    pos_tags = [tag for tag in pos_tags if tag]
+    return Counter(pos_tags)

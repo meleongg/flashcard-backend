@@ -87,18 +87,18 @@ sample_flashcards = [
 
 async def seed_data():
     async with AsyncSessionLocal() as session:
-        # ✅ Create default settings for the user
-        settings = UserSettings(
-            user_id=user_id,
-            default_source_lang="en",
-            default_target_lang="zh",
-            default_quiz_length=10,
-            auto_tts=True,
-            reverse_quiz_default=False,
-            dark_mode=False,
-            daily_learning_goal=10,
-        )
-        session.add(settings)
+        # settings = UserSettings(
+        #     user_id=user_id,
+        #     default_source_lang="en",
+        #     default_target_lang="zh",
+        #     default_quiz_length=10,
+        #     auto_tts=True,
+        #     reverse_quiz_default=False,
+        #     dark_mode=False,
+        #     daily_learning_goal=10,
+        #     onboarding_completed=True
+        # )
+        # session.add(settings)
 
         folders = []
         for folder_data in sample_folders:
