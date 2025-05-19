@@ -21,12 +21,68 @@ async def get_user_stats(
     quiz_stats = await get_quiz_stats(db, user_id)
     review_stats = await get_review_stats(db, user_id)
     activity_and_streak = await get_activity_and_streak(db, user_id)
+    pos_stats = await get_pos_distribution(db, user_id)
+    total_cards = await get_total_cards(db, user_id)
 
     return {
         **quiz_stats,
         **review_stats,
-        **activity_and_streak
+        **activity_and_streak,
+        "pos_dsitribution": pos_stats,
+        "total_cards": total_cards
     }
+
+@router.get("/stats/pos-insights")
+async def get_pos_insights(
+    db: AsyncSession = Depends(get_db),
+    user_id: str = Depends(get_current_user),
+):
+    result = await db.execute(
+        select(Flashcard.pos).where(Flashcard.user_id == user_id)
+    )
+    tags = [tag for tag in result.scalars().all() if tag]
+
+    from collections import Counter
+    total = len(tags)
+    pos_counts = Counter(tags)
+
+    if total == 0:
+        return {"insight": None, "tags": {}, "status": "no_data"}
+
+    # Percentages
+    pct = {tag: round((count / total) * 100) for tag, count in pos_counts.items()}
+
+    noun, verb, adj, adv = (
+        pct.get("NOUN", 0),
+        pct.get("VERB", 0),
+        pct.get("ADJ", 0),
+        pct.get("ADV", 0),
+    )
+
+    if noun > 60 and verb < 20:
+        return {
+            "insight": "You’re focusing heavily on nouns. Try adding more verbs to balance your vocabulary.",
+            "tags": pct,
+            "status": "noun_heavy",
+        }
+    elif adj < 10 and adv < 5:
+        return {
+            "insight": "You have very few descriptive words. Try adding adjectives and adverbs.",
+            "tags": pct,
+            "status": "needs_descriptive",
+        }
+    elif noun < 30 and verb > 50:
+        return {
+            "insight": "You’re using many action words, but could use more nouns for fuller expressions.",
+            "tags": pct,
+            "status": "verb_heavy",
+        }
+    else:
+        return {
+            "insight": "Nice work! Your vocabulary shows a good balance across word types.",
+            "tags": pct,
+            "status": "balanced",
+        }
 
 async def get_quiz_stats(db: AsyncSession, user_id: str):
     quiz_count_result = await db.execute(
@@ -154,16 +210,15 @@ async def get_activity_and_streak(db: AsyncSession, user_id: str):
         "recent_activity": dates[-7:]
     }
 
-@router.get("/stats/pos-distribution")
-async def get_pos_distribution(
-    db: AsyncSession = Depends(get_db),
-    user_id: str = Depends(get_current_user),
-):
+async def get_pos_distribution(db: AsyncSession, user_id: str):
     result = await db.execute(
         select(Flashcard.pos).where(Flashcard.user_id == user_id)
     )
-    pos_tags = result.scalars().all()
+    pos_tags = [tag for tag in result.scalars().all() if tag]
+    return dict(Counter(pos_tags))
 
-    # Filter out null or empty
-    pos_tags = [tag for tag in pos_tags if tag]
-    return Counter(pos_tags)
+async def get_total_cards(db: AsyncSession, user_id: str):
+    result = await db.execute(
+        select(func.count()).select_from(Flashcard).where(Flashcard.user_id == user_id)
+    )
+    return result.scalar_one_or_none() or 0

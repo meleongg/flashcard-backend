@@ -154,6 +154,9 @@ class UserStatsResponse(BaseModel):
     review_retention_over_time: List[ReviewRetentionPoint]
     interval_distribution: List[IntervalBin]
 
+    pos_distribution: Dict[str, int] = {}
+    total_cards: int
+
     # General activity
     streak_days: int
     recent_activity: List[datetime]
@@ -192,6 +195,3 @@ class FlashcardReviewPreview(BaseModel):
 
     class Config:
         orm_mode = True
-
-class POSDistributionResponse(BaseModel):
-    counts: Dict[str, int]
