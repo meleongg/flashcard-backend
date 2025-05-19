@@ -18,7 +18,7 @@ from models import Flashcard, Folder, UserSettings
 from models.quiz import QuizSession, QuizAnswerLog
 from models.review import ReviewSession, ReviewEvent
 
-load_dotenv()
+load_dotenv(override=True)
 user_id = os.getenv("SEED_USER_ID")
 
 if not user_id:
