@@ -15,6 +15,7 @@ from dotenv import load_dotenv
 from datetime import datetime, timedelta, date
 from database.database import engine
 from models import Flashcard, Folder, UserSettings
+from models.quiz import QuizSession, QuizAnswerLog
 from models.review import ReviewSession, ReviewEvent
 
 load_dotenv()
@@ -145,8 +146,7 @@ async def seed_data():
             session.add(flashcard)
         await session.flush()
 
-        # Optional: seed review sessions
-        for _ in range(2):  # Create 2 fake review sessions
+        for _ in range(2):
             review_session_id = str(uuid.uuid4())
             session.add(ReviewSession(
                 id=review_session_id,
@@ -172,18 +172,49 @@ async def seed_data():
                         created_at=datetime.utcnow()
                     ))
 
+        for _ in range(2):
+            quiz_session_id = str(uuid.uuid4())
+            folder = random.choice(folders)
+
+            session.add(QuizSession(
+                id=quiz_session_id,
+                user_id=user_id,
+                folder_id=folder.id,
+                include_reverse=random.choice([True, False]),
+                card_count=5,
+                created_at=datetime.utcnow() - timedelta(days=random.randint(0, 5))
+            ))
+
+            # Add 3–5 fake answers for the quiz
+            answered_flashcards = random.sample(sample_flashcards, k=random.randint(3, 5))
+            for flash_data in answered_flashcards:
+                result = await session.execute(
+                    text('SELECT id FROM "Flashcard" WHERE word = :word AND user_id = :user_id'),
+                    {"word": flash_data["word"], "user_id": user_id}
+                )
+                flashcard_id = result.scalar()
+                if flashcard_id:
+                    session.add(QuizAnswerLog(
+                        id=str(uuid.uuid4()),
+                        session_id=quiz_session_id,
+                        flashcard_id=flashcard_id,
+                        is_correct=random.choice([True, False]),
+                        answered_at=datetime.utcnow()
+                    ))
+
         await session.commit()
-        print("✅ Seeded user settings, folders, flashcards, and review events!")
+        print("✅ Seeded user settings, folders, flashcards, quizzes, and review events!")
 
 async def clear_data():
     async with AsyncSessionLocal() as session:
-        await session.execute(text('DELETE FROM "ReviewEvent"'))
-        await session.execute(text('DELETE FROM "ReviewSession"'))
         await session.execute(text('DELETE FROM "Flashcard"'))
         await session.execute(text('DELETE FROM "Folder"'))
         await session.execute(text('DELETE FROM "UserSettings"'))
-        await session.commit()
-        print("🧹 Cleared review events, sessions, flashcards, folders, and user settings.")
+        await session.execute(text('DELETE FROM "QuizAnswerLog"'))
+        await session.execute(text('DELETE FROM "QuizSession"'))
+        await session.execute(text('DELETE FROM "ReviewEvent"'))
+        await session.execute(text('DELETE FROM "ReviewSession"'))
+        print("🧹 Cleared review events, sessions, flashcards, folders, quizzes, and user settings.")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Seed or clear flashcard data.")

@@ -131,17 +131,32 @@ class QuizSessionResponse(QuizSessionBase):
     class Config:
         orm_mode = True
 
+class ReviewRetentionPoint(BaseModel):
+    date: str
+    rate: float
+
+class IntervalBin(BaseModel):
+    interval: str
+    count: int
+
 class UserStatsResponse(BaseModel):
+    # Quiz stats
     total_quizzes: int
     total_answers: int
     correct_answers: int
     accuracy_percent: float
+
+    # Review stats
+    total_reviews: int
+    cards_reviewed: int
+    avg_cards_per_session: float
+    retention_rate: float
+    review_retention_over_time: List[ReviewRetentionPoint]
+    interval_distribution: List[IntervalBin]
+
+    # General activity
     streak_days: int
     recent_activity: List[datetime]
-
-    class Config:
-        orm_mode = True
-
 class UserSettingsResponse(BaseModel):
     default_source_lang: str
     default_target_lang: str
