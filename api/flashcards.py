@@ -4,10 +4,11 @@ from sqlalchemy.future import select
 from sqlalchemy import func
 from models import Flashcard, Folder
 from database.database import get_db
-from utils.utils import generate_example_and_notes, translate_word, get_pos, detect_language
+from utils.utils import generate_flashcard_with_gpt, get_phonetic, get_pos, detect_language
 from api.schemas import (
   PaginatedFlashcardResponse,
   FlashcardUpdate,
+  FlashcardSubmit,
   FlashcardResponse,
   FlashcardCreate,
   FlashcardFolderUpdate,
@@ -107,36 +108,27 @@ async def get_flashcard_detail(
     return to_flashcard_response(flashcard)
 
 @router.post("/flashcard", response_model=FlashcardResponse)
-async def generate_flashcard(
-    flashcard_data: FlashcardCreate,
+async def save_flashcard(
+    flashcard_data: FlashcardSubmit,
     db: AsyncSession = Depends(get_db),
     user_id: str = Depends(get_current_user)
 ):
-    word = flashcard_data.word
-    folder_id = flashcard_data.folder_id
-    source_lang = getattr(flashcard_data, "source_lang", "en")
-    target_lang = getattr(flashcard_data, "target_lang", "zh")
-
+    word = flashcard_data.word.strip()
     if not word:
         raise HTTPException(status_code=400, detail="Missing word")
-
-    pos = get_pos(word)
-    translation = translate_word(word)
-    example, notes = generate_example_and_notes(word)
-    phonetic = "-".join(word)
 
     new_flashcard = Flashcard(
         id=str(uuid.uuid4()),
         word=word,
-        translation=translation,
-        phonetic=phonetic,
-        pos=pos,
-        example=example,
-        notes=notes,
-        folder_id=folder_id,
+        translation=flashcard_data.translation,
+        phonetic=flashcard_data.phonetic,
+        pos=flashcard_data.pos,
+        example=flashcard_data.example,
+        notes=flashcard_data.notes,
+        source_lang=flashcard_data.source_lang,
+        target_lang=flashcard_data.target_lang,
+        folder_id=flashcard_data.folder_id,
         user_id=user_id,
-        source_lang=source_lang,
-        target_lang=target_lang,
     )
 
     db.add(new_flashcard)
@@ -165,8 +157,6 @@ async def update_flashcard(
     await db.commit()
     await db.refresh(flashcard)
     return to_flashcard_response(flashcard)
-
-from api.schemas import FlashcardPreview, FlashcardCreate
 
 @router.put("/flashcard/{flashcard_id}/folder", response_model=FlashcardResponse)
 async def assign_flashcard_to_folder(
@@ -200,7 +190,7 @@ async def preview_flashcard(
     payload: FlashcardCreate,
     user_id: str = Depends(get_current_user)
 ):
-    word = payload.word
+    word = payload.word.strip()
     source_lang = payload.source_lang or "en"
     target_lang = payload.target_lang or "zh"
 
@@ -214,13 +204,14 @@ async def preview_flashcard(
     if target_lang == "auto":
         target_lang = "zh" if source_lang == "en" else "en"
 
-    example, notes = generate_example_and_notes(word)
+    # ✨ GPT: Combine translation, example, and note generation
+    translation, example, notes = generate_flashcard_with_gpt(word, source_lang, target_lang)
 
     return FlashcardPreview(
         word=word,
-        translation=translate_word(word),
-        phonetic="-".join(word),
-        pos=get_pos(word),
+        translation=translation,
+        phonetic=get_phonetic(word, lang=source_lang),
+        pos=get_pos(word, lang=source_lang),
         example=example,
         notes=notes,
         source_lang=source_lang,

@@ -26,6 +26,17 @@ class FlashcardCreate(BaseModel):
     source_lang: str = "en"
     target_lang: str = "zh"
 
+class FlashcardSubmit(BaseModel):
+    word: str
+    translation: str
+    phonetic: str
+    pos: str
+    example: str
+    notes: str
+    source_lang: str = "en"
+    target_lang: str = "zh"
+    folder_id: Optional[str] = None
+
 class SpacedRepetitionMetadata(BaseModel):
     review_count: int
     interval: int

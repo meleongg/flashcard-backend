@@ -39,3 +39,6 @@ Thumbs.db
 
 data/cedict_1_0_ts_utf-8_mdbg.txt.gz
 data/cedict.json
+
+# Ignore Stanza model data
+stanza_resources/

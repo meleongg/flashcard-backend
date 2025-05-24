@@ -1,0 +1,7 @@
+{
+  "build": {
+    "commands": {
+      "postinstall": "./postinstall.sh"
+    }
+  }
+}
