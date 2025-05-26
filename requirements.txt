@@ -1,11 +1,23 @@
+# Backend
 fastapi
 uvicorn
-spacy
-python-dotenv
-openai
-greenlet>=2.0
+
+# Database & ORM
 sqlalchemy
 asyncpg
+greenlet>=2.0
+
+# Authentication
 python-jose
-langdetect
+
+# NLP
+spacy
 stanza
+langdetect
+
+# Env & API
+python-dotenv
+openai
+
+# Optional: lightweight Pinyin tool for Mandarin
+pypinyin
