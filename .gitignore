@@ -40,10 +40,4 @@ Thumbs.db
 data/cedict_1_0_ts_utf-8_mdbg.txt.gz
 data/cedict.json
 
-stanza_resources/*
-!stanza_resources/zh/
-!stanza_resources/zh/tokenize/
-!stanza_resources/zh/pos/
-!stanza_resources/zh/defaults.json
-!stanza_resources/zh/tokenize/*
-!stanza_resources/zh/pos/*
+stanza_resources/

@@ -2,12 +2,12 @@ import os
 import re
 import stanza
 import spacy
-import requests
 from dotenv import load_dotenv
 from openai import OpenAI
 from langdetect import detect_langs
 from api.schemas import FlashcardData
 from pypinyin import pinyin, Style
+from spacy.cli import download
 
 load_dotenv()
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
@@ -32,13 +32,22 @@ def detect_language(text: str, threshold: float = 0.8) -> str:
 
 # --- Lazy loading helpers ---
 def get_spacy(lang: str):
+    model_map = {
+        "en": "en_core_web_sm",
+        "fr": "fr_core_news_sm",
+    }
+
+    if lang not in model_map:
+        return None
+
     if lang not in _loaded_spacy:
-        if lang == "en":
-            _loaded_spacy[lang] = spacy.load("en_core_web_sm")
-        elif lang == "fr":
-            _loaded_spacy[lang] = spacy.load("fr_core_news_sm")
-        else:
-            return None
+        model_name = model_map[lang]
+        try:
+            _loaded_spacy[lang] = spacy.load(model_name)
+        except OSError:
+            print(f"⚠️ {model_name} not found, downloading...")
+            download(model_name)
+            _loaded_spacy[lang] = spacy.load(model_name)
     return _loaded_spacy[lang]
 
 def get_stanza(lang: str):
