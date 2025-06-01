@@ -11,13 +11,11 @@ greenlet>=2.0
 python-jose
 
 # NLP
-spacy
-stanza
 langdetect
 
 # Env & API
 python-dotenv
 openai
 
-# Optional: lightweight Pinyin tool for Mandarin
+# Optional: Pinyin
 pypinyin

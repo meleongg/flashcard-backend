@@ -4,7 +4,7 @@ from sqlalchemy.future import select
 from sqlalchemy import func
 from models import Flashcard, Folder
 from database.database import get_db
-from utils.utils import generate_flashcard_with_gpt, get_phonetic, get_pos, detect_language
+from utils.utils import generate_flashcard_with_gpt, get_phonetic, detect_language
 from api.schemas import (
   PaginatedFlashcardResponse,
   FlashcardUpdate,
@@ -204,14 +204,13 @@ async def preview_flashcard(
     if target_lang == "auto":
         target_lang = "zh" if source_lang == "en" else "en"
 
-    # ✨ GPT: Combine translation, example, and note generation
-    translation, example, notes = generate_flashcard_with_gpt(word, source_lang, target_lang)
+    translation, example, notes, pos = generate_flashcard_with_gpt(word, source_lang, target_lang)
 
     return FlashcardPreview(
         word=word,
         translation=translation,
         phonetic=get_phonetic(word, lang=source_lang),
-        pos=get_pos(word, lang=source_lang),
+        pos=pos,
         example=example,
         notes=notes,
         source_lang=source_lang,
